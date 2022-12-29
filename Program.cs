@@ -26,6 +26,22 @@ namespace FinalProject
         __\/////////__________\/////////_____\///______________\///__\///______________
 ";
 
+		static string lost = @"
+   _                   _
+ _( )                 ( )_
+(_, |      __ __      | ,_)
+   \'\    /  ^  \    /'/
+    '\'\,/\      \,/'/'
+      '\| []   [] |/'
+        (_  /^\  _)
+          \  ~  /
+          /HHHHH\
+        /'/{^^^}\'\
+    _,/'/'  ^^^  '\'\,_
+   (_, |           | ,_)
+     (_)           (_)
+";
+
 		public enum MoveState {Default, Jump, DoubleJump, Crouch};
 
 		static void Main(string[] args)
@@ -42,15 +58,14 @@ namespace FinalProject
 
 			Random rnd = new Random();
 
-			Stopwatch swGame = new Stopwatch();
 			Stopwatch swObsticleSpawn = new Stopwatch();
 			Stopwatch swObsticle = new Stopwatch();
 			Stopwatch swJump = new Stopwatch();
 
 			TimeSpan tsObsticleSpawn = TimeSpan.FromSeconds(1.5);
-			TimeSpan tsObsticleMove = TimeSpan.FromMilliseconds(30);
-			TimeSpan tsJump = TimeSpan.FromMilliseconds(400);
-			TimeSpan tsDown = TimeSpan.FromMilliseconds(600);
+			TimeSpan tsObsticleMove = TimeSpan.FromMilliseconds(18);
+			TimeSpan tsJump = TimeSpan.FromMilliseconds(350);
+			TimeSpan tsDown = TimeSpan.FromMilliseconds(300);
 
 			List<Obsticle> obs = new List<Obsticle>();
 
@@ -63,219 +78,182 @@ namespace FinalProject
 			Console.WriteLine("\nPress any key to start...");
 			Console.ReadKey();
 
-			Floor f = new Floor();
-			Console.Clear();
-			Console.SetCursorPosition(0, p.top + 5);
-
-			string item = f.print();
-			
-			WriteLine(item);
-			
-			int jumpLimit = 2;
-			bool crouch = false;
-
-			swObsticle.Restart();
-			swObsticleSpawn.Restart();
-			swGame.Restart();
-
-			//initial player render
-			Console.SetCursorPosition(p.left, p.top);
-			Render(p.image);
-
-			bool isLost = false;
-			while (!isLost)
+			bool playerLost;
+			int highest = 0;
+			//bool more = true;
+			while (true)
 			{
-				//print score
-				Console.SetCursorPosition(0, 0);
-				Console.Write("Score: " + p.score);
+				//initial setup
+				playerLost = false;
+				Console.Clear();
+				Console.SetCursorPosition(0, p.top + 4);
+				WriteLine(new Floor().print());
+				Console.SetCursorPosition(p.left, p.top);
+				Render(p.image);
 
-				if (p.score > 50)
+				swObsticle.Restart();
+				swObsticleSpawn.Restart();
+				
+				while (!playerLost)
 				{
-					tsObsticleMove = TimeSpan.FromMilliseconds(15);
-					tsJump = tsDown = TimeSpan.FromMilliseconds(300);
-				}
-				else if (p.score > 20) tsObsticleMove = TimeSpan.FromMilliseconds(20);
+					//Update score header
+					Console.SetCursorPosition(0,0);
+					Write("Score: " + p.score);
+					ForegroundColor = ConsoleColor.Cyan;
+					Write("\tHighest score: " + highest);
+					ResetColor();
 
-				//Update player
-				if (Console.KeyAvailable)
-				{
-					ConsoleKeyInfo input = ReadKey(true);
-					switch (input.Key)
+					//Update player
+					if (Console.KeyAvailable)
 					{
-						//jump
-						case ConsoleKey.W:
-						case ConsoleKey.UpArrow:
-							//render jump up
-							if (p.state < MoveState.DoubleJump)
+						ConsoleKeyInfo input = ReadKey(true);
+						switch (input.Key)
+						{
+							//Jump
+							case ConsoleKey.W:
+							case ConsoleKey.UpArrow:
+								//Render jump up
+								if (p.state < MoveState.DoubleJump)
+								{
+									Move(p, -3);
+									if (p.state == MoveState.Jump) p.state = MoveState.DoubleJump;
+									else p.state = MoveState.Jump;
+									swJump.Restart();
+								}
+								break;
+
+							case ConsoleKey.S:
+							case ConsoleKey.DownArrow:
+								if (p.state == MoveState.Default)
+								{
+									p.state = MoveState.Crouch;
+									Move(p, 1);
+									swJump.Restart();
+								}
+								break;
+
+						}
+					}
+
+					//render player
+					switch (p.state)
+					{
+						case MoveState.DoubleJump: //render double jump landing
+							if (swJump.Elapsed > tsJump)
 							{
-								
-								jump(p, 3);
-								if (p.state == MoveState.Jump) p.state = MoveState.DoubleJump;
-								else p.state = MoveState.Jump;
+								Move(p, 3);
 								swJump.Restart();
+								p.state = MoveState.Jump;
 							}
 							break;
 
-						case ConsoleKey.S:
-						case ConsoleKey.DownArrow:
-							if (p.state == MoveState.Default)
+						case MoveState.Jump: //Render single jump landing
+							if (swJump.Elapsed > tsJump)
 							{
-								Console.SetCursorPosition(p.left, p.top);
-								Erase(p.image);
-								p.top += 1;
-								Console.SetCursorPosition(p.left, p.top);
-								Render(p.imageDown);
-								crouch = true;
+								Move(p, 3);
 								swJump.Restart();
-
-								p.state = MoveState.Crouch;
+								p.state = MoveState.Default;
 							}
 							break;
 
+						case MoveState.Crouch:
+							if (swJump.Elapsed > tsDown)
+							{
+								Move(p, -1);
+								swJump.Restart();
+								p.state = MoveState.Default;
+							}
+							break;
 					}
-				}
 
-				//render player
-				switch (p.state) {
-					case MoveState.DoubleJump: //render double jump landing
-						if (swJump.Elapsed > tsJump)
-						{
-							Console.SetCursorPosition(p.left, p.top);
-							Erase(p.image);
-							p.top += 3;
-							Console.SetCursorPosition(p.left, p.top);
-							Render(p.image);
-							swJump.Restart();
-							jumpLimit++;
-							p.state = MoveState.Jump;
-						}
-						break;
-
-					case MoveState.Jump: //Render single jump landing
-						if (swJump.Elapsed > tsJump)
-						{
-							Console.SetCursorPosition(p.left, p.top);
-							Erase(p.image);
-							p.top += 3;
-							Console.SetCursorPosition(p.left, p.top);
-							Render(p.image);
-							swJump.Restart();
-							jumpLimit++;
-							p.state = MoveState.Default;
-						}
-						break;
-
-					case MoveState.Crouch:
-						if (swJump.Elapsed > tsDown)
-						{
-							Console.SetCursorPosition(p.left, p.top);
-							Erase(p.imageDown);
-							p.top -= 1;
-							Console.SetCursorPosition(p.left, p.top);
-							Render(p.image);
-							swJump.Restart();
-							p.state = MoveState.Default;
-						}
-						break;
-				}
-
-
-				//Update obsticle
-				if (swObsticleSpawn.Elapsed > tsObsticleSpawn)
-				{
-					int height = rnd.Next(2) == 1 ? 2 : 4;
-					Obsticle ob = new Obsticle(2, height, '█');
-					ob.left = WindowWidth;
-					if (height == 4)
+					//Update obsticle
+					if (swObsticleSpawn.Elapsed > tsObsticleSpawn)
 					{
-						ob.top = WindowHeight / 2 + 1;
+						int height = rnd.Next(2) == 1 ? 2 : 4;
+						Obsticle ob = new Obsticle(2, height, '█');
+						ob.left = WindowWidth;
+						if (height == 4)
+						{
+							ob.top = WindowHeight / 2;
+						}
+						else
+						{
+							ob.top = rnd.Next(2) == 1 ? WindowHeight / 2 + 2 : WindowHeight / 2 - 1;
+						}
+
+
+						obs.Add(ob);
+						swObsticleSpawn.Restart();
+						tsObsticleSpawn = TimeSpan.FromSeconds(1 + rnd.NextDouble() * 2);
 					}
-					else
+
+					if (swObsticle.Elapsed > tsObsticleMove)
 					{
-						ob.top = rnd.Next(2) == 1 ? WindowHeight / 2 + 3 : WindowHeight / 2;
+						for (int i = 0; i < obs.Count; i++)
+						{
+							Obsticle ob = obs[i];
+							if (ob.left < WindowWidth)
+							{
+								Console.SetCursorPosition(ob.left, ob.top);
+								Erase(ob.frame);
+							}
+							ob.left--;
+
+							//add points if passed
+							if (ob.left + 2 <= p.left)
+							{
+								p.score += ob.point;
+								ob.point = 0;
+							}
+
+							if (ob.left <= 0)
+							{
+								Console.SetCursorPosition(ob.left, ob.top);
+								Erase(ob.frame);
+								obs.Remove(ob);
+							}
+						}
+						swObsticle.Restart();
 					}
 
 
-					obs.Add(ob);
-					swObsticleSpawn.Restart();
-					tsObsticleSpawn = TimeSpan.FromSeconds(1 + rnd.NextDouble() * 2);
-				}
-
-				if (swObsticle.Elapsed > tsObsticleMove)
-				{
-					for (int i = 0; i < obs.Count; i++)
+					//render obsticles
+					foreach (Obsticle ob in obs)
 					{
-						Obsticle ob = obs[i];
 						if (ob.left < WindowWidth)
 						{
 							Console.SetCursorPosition(ob.left, ob.top);
-							Erase(ob.frame);
+							Render(ob.frame);
 						}
-						ob.left--;
-						//check collision
-						//if collides game over
 
-						//add points if passed
-						if (ob.left + 2 <= p.left)
+						if (isCollision(p, ob))
 						{
-							p.score += ob.point;
-							ob.point = 0;
+							playerLost = true;
 						}
-
-						if (ob.left <= 0)
-						{
-							Console.SetCursorPosition(ob.left, ob.top);
-							Erase(ob.frame);
-							obs.Remove(ob);
-						}
-					}
-					swObsticle.Restart();
-				}
-
-
-
-				//render obsticles
-				foreach (Obsticle ob in obs)
-				{
-					if (ob.left < WindowWidth)
-					{
-						Console.SetCursorPosition(ob.left, ob.top);
-						Render(ob.frame);
-					}
-
-					if (isCollision(p, ob))
-					{
-						isLost = true;
-						//Thread.Sleep(20);
 					}
 				}
+				
 
+				//end of round
+				ForegroundColor = ConsoleColor.Red;
+				Console.SetCursorPosition(45, 3);
+				Write("Game Over\n");
+				Console.SetCursorPosition(37, 5);
+				Render(lost);
+
+				Console.SetCursorPosition(40, WindowHeight -10);
+				Write("Enter [Esc] to exit...");
+
+
+				ResetColor();
+
+				Console.Clear();
+				Console.WriteLine("Good Bye");
 			}
 
-			//Clear();
-			Console.SetCursorPosition(WindowHeight/2, 0);
-			ForegroundColor = ConsoleColor.Red;
-			Write("\nGame Over\n");
-			/*Write(@"
-   _                   _
- _( )                 ( )_
-(_, |      __ __      | ,_)
-   \'\    /  ^  \    /'/
-    '\'\,/\      \,/'/'
-      '\| []   [] |/'
-        (_  /^\  _)
-          \  ~  /
-          /HHHHH\
-        /'/{^^^}\'\
-    _,/'/'  ^^^  '\'\,_
-   (_, |           | ,_)
-     (_)           (_)
-");*/
-
 			
-			Console.WriteLine("Press any key to exit...");
-			ResetColor();
-			Console.ReadKey();
+			Console.WriteLine("Good Bye");
+
 		}
 
 		static bool isCollision(Player p, Obsticle ob)
@@ -299,27 +277,35 @@ namespace FinalProject
 			int pBottom = p.top + height;
 			int obBottom = ob.top + ob.height;
 
-			//let it pass from below
-			
 			//front hit
-			if (ob.left <= pRight && obRight > pRight && pBottom > ob.top && obBottom > p.top)
+			if (ob.left <= pRight && obRight > pRight && pBottom > ob.top && p.top < obBottom)
 			{
-				
 				return true;
-			} //bottom hit
-			else if (pBottom >= ob.top && ob.left <= pRight && p.left <= obRight) return true;
+			} //below or above obsticle
+			else if (ob.left <= pRight && p.left <= obRight)
+			{
+				//touches obsticle from above
+				if (pBottom - 1 >= ob.top && p.top < obBottom - 1)
+				{
+					return true;
+				}
+				//touches obsticle from below
+				if (p.top < obBottom && pBottom > ob.top)
+				{
+					return true;
+				}
+			}
 
 			return false;
 		}
 
-		static void jump(Player p, int peak)
+		static void Move(Player p, int distance)
 		{
 			Console.SetCursorPosition(p.left, p.top);
-			Erase(p.image);
-			p.top -= peak;
+			Erase((distance == -1)? p.imageDown: p.image);
+			p.top += distance;
 			Console.SetCursorPosition(p.left, p.top);
-			Render(p.image);
-			
+			Render((distance == 1)? p.imageDown: p.image);
 			
 		}
 
@@ -358,13 +344,11 @@ namespace FinalProject
 		public int top;
 		public int score;
 		public Program.MoveState state;
-		public string image = @"
-\\ 
+		public string image = @"\\ 
   ()   
   /)r
 o()_";
-		public string imageDown = @"
-    \\
+		public string imageDown = @"    \\
   .---()
 o()_-\_";
 
@@ -389,7 +373,6 @@ o()_-\_";
 
 	}
 
-	
 	class Obsticle : Block
 	{
 		public int left;
@@ -414,7 +397,6 @@ o()_-\_";
 		public int height;
 		public int width;
 		public char style;
-		public string image;
 
 		//create the block as a string
 		public string print()
@@ -427,7 +409,7 @@ o()_-\_";
 					image += style;
 				}
 
-				image += "\n";
+				if(i < height - 1) image += "\n";
 			}
 
 			return image;
