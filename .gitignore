@@ -1,0 +1,13 @@
+*.json
+*.cache
+*.dll
+*.exe
+.dtbcache.v2
+*.pdb
+*.AssemblyAttributes.cs
+*.AssemblyInfo.cs
+*.FileListAbsolute.txt
+*.editorconfig
+*.suo
+*.props
+*.targets
