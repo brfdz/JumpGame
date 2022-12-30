@@ -42,13 +42,13 @@ namespace FinalProject
      (_)           (_)
 ";
 
-		public enum MoveState {Default, Jump, DoubleJump, Crouch};
+		public enum MoveState { Default, Jump, DoubleJump, Crouch };
 
 		static void Main(string[] args)
 		{
-			Player p = new Player();
+			/*Player p = new Player();
 			p.left = 20;
-			p.top = WindowHeight/ 2;
+			p.top = WindowHeight / 2;*/
 			Clear();
 
 			WindowWidth = 100;
@@ -63,12 +63,11 @@ namespace FinalProject
 			Stopwatch swJump = new Stopwatch();
 
 			TimeSpan tsObsticleSpawn = TimeSpan.FromSeconds(1.5);
-			TimeSpan tsObsticleMove = TimeSpan.FromMilliseconds(18);
+			TimeSpan tsObsticleMove = TimeSpan.FromMilliseconds(15);
 			TimeSpan tsJump = TimeSpan.FromMilliseconds(350);
 			TimeSpan tsDown = TimeSpan.FromMilliseconds(300);
 
 			List<Obsticle> obs = new List<Obsticle>();
-
 
 			//headers
 			Title = "Jump";
@@ -80,9 +79,12 @@ namespace FinalProject
 
 			bool playerLost;
 			int highest = 0;
-			//bool more = true;
-			while (true)
+			bool gameEnd = false;
+			do
 			{
+				Player p = new Player();
+				p.left = 20;
+				p.top = WindowHeight / 2;
 				//initial setup
 				playerLost = false;
 				Console.Clear();
@@ -94,10 +96,11 @@ namespace FinalProject
 				swObsticle.Restart();
 				swObsticleSpawn.Restart();
 				
+			
 				while (!playerLost)
 				{
 					//Update score header
-					Console.SetCursorPosition(0,0);
+					Console.SetCursorPosition(0, 0);
 					Write("Score: " + p.score);
 					ForegroundColor = ConsoleColor.Cyan;
 					Write("\tHighest score: " + highest);
@@ -226,37 +229,59 @@ namespace FinalProject
 							Render(ob.frame);
 						}
 
-						if (isCollision(p, ob))
+						if (isCollided(p, ob))
 						{
 							playerLost = true;
 						}
 					}
 				}
-				
 
-				//end of round
+				//Game over
 				ForegroundColor = ConsoleColor.Red;
 				Console.SetCursorPosition(45, 3);
 				Write("Game Over\n");
 				Console.SetCursorPosition(37, 5);
 				Render(lost);
 
-				Console.SetCursorPosition(40, WindowHeight -10);
-				Write("Enter [Esc] to exit...");
-
-
+				Console.SetCursorPosition(37, WindowHeight - 9);
+				Write("Press [Enter] to continue...");
 				ResetColor();
+				ConsoleKeyInfo answer = ReadKey(true);
+				if (answer.Key.CompareTo(ConsoleKey.Enter) == 0)
+					gameEnd = false;
+				else
+					gameEnd = true;
 
+
+				//Reset the game
+				highest = Math.Max(highest, p.score);
 				Console.Clear();
-				Console.WriteLine("Good Bye");
-			}
+				obs.Clear();
 
-			
-			Console.WriteLine("Good Bye");
 
+			} while (!gameEnd);
+
+			Console.WriteLine(@"
+                                     ;                                                  
+                  :           :      ED.                                                
+                 t#,         t#,     E#Wi                                             ,;
+          .Gt   ;##W.       ;##W.    E###G.             .                           f#i 
+         j#W:  :#L:WE      :#L:WE    E#fD#W;            Ef.        f.     ;WE.    .E#t  
+       ;K#f   .KG  ,#D    .KG  ,#D   E#t t##L           E#Wi       E#,   i#G     i#W,   
+     .G#D.    EE    ;#f   EE    ;#f  E#t  .E#K,         E#K#D:     E#t  f#f     L#D.    
+    j#K;     f#.     t#i f#.     t#i E#t    j##f        E#  E#f.   E#t G#i    :K#Wfff;  
+  ,K#f   ,GD;:#G     GK  :#G     GK  E#t    :E#K:       E#WEE##Wt  E#jEW,     i##WLLLLt 
+   j#Wi   E#t ;#L   LW.   ;#L   LW.  E#t   t##L         E##Ei;;;;. E##E.       .E#L     
+    .G#D: E#t  t#f f#:     t#f f#:   E#t .D#W;          E#DWWt     E#G           f#E:   
+      ,K#fK#t   f#D#;       f#D#;    E#tiW#G.           E#   #K;   E#t            ,WW;  
+        j###t    G#t         G#t     E#K##i             E#Dfff##E, E#t             .D#; 
+         .G#t     t           t      E##D.              jLLLLLLLLL;EE.               tt 
+           ;;                        E#t                           t                    
+                                     L:                                                 
+");
 		}
 
-		static bool isCollision(Player p, Obsticle ob)
+		static bool isCollided(Player p, Obsticle ob)
 		{ 
 			int width;
 			int height;
@@ -336,6 +361,7 @@ namespace FinalProject
 					Console.SetCursorPosition(Console.CursorLeft + 1, Console.CursorTop);
 			}
 		}
+
 	}
 
 	class Player
