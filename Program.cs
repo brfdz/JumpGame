@@ -177,7 +177,8 @@ namespace FinalProject
 						ob.left = WindowWidth;
 						if (height == 4)
 						{
-							ob.top = WindowHeight / 2;
+							//ob.top = WindowHeight / 2;
+							ob.top = rnd.Next(2) == 1 ? WindowHeight / 2 : WindowHeight / 2 - 3;
 						}
 						else
 						{
@@ -244,14 +245,13 @@ namespace FinalProject
 				Render(lost);
 
 				Console.SetCursorPosition(37, WindowHeight - 9);
-				Write("Press [Enter] to continue...");
+				Write("Press [Esc] to exit...");
 				ResetColor();
 				ConsoleKeyInfo answer = ReadKey(true);
-				if (answer.Key.CompareTo(ConsoleKey.Enter) == 0)
-					gameEnd = false;
-				else
+				if (answer.Key.CompareTo(ConsoleKey.Escape) == 0)
 					gameEnd = true;
-
+				else
+					gameEnd = false;
 
 				//Reset the game
 				highest = Math.Max(highest, p.score);
