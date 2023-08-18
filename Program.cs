@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Collections.Generic;
 
 /* References
- *  Character art: https://asciiart.website/index.php?art=animals/rabbits
  *  Header art: https://www.patorjk.com/software/taag/#p=display&f=Graffiti&t=Type%20Something%20
  *  Erase and Render Methods adapted from: https://github.com/ZacharyPatten/dotnet-console-games/tree/main/Projects/Helicopter
  */
@@ -46,11 +45,6 @@ namespace FinalProject
 
 		static void Main(string[] args)
 		{
-			/*Player p = new Player();
-			p.left = 20;
-			p.top = WindowHeight / 2;*/
-			Clear();
-
 			WindowWidth = 100;
 			WindowHeight = 30;
 
@@ -65,7 +59,7 @@ namespace FinalProject
 			TimeSpan tsObsticleSpawn = TimeSpan.FromSeconds(1.5);
 			TimeSpan tsObsticleMove = TimeSpan.FromMilliseconds(15);
 			TimeSpan tsJump = TimeSpan.FromMilliseconds(350);
-			TimeSpan tsDown = TimeSpan.FromMilliseconds(300);
+			TimeSpan tsDown = TimeSpan.FromMilliseconds(350);
 
 			List<Obsticle> obs = new List<Obsticle>();
 
@@ -244,14 +238,19 @@ namespace FinalProject
 				Console.SetCursorPosition(37, 5);
 				Render(lost);
 
-				Console.SetCursorPosition(37, WindowHeight - 9);
+				Console.SetCursorPosition(39, WindowHeight - 9);
 				Write("Press [Esc] to exit...");
+				Console.SetCursorPosition(34, WindowHeight - 8);
+				Write("Press any other key to continue");
 				ResetColor();
 				ConsoleKeyInfo answer = ReadKey(true);
 				if (answer.Key.CompareTo(ConsoleKey.Escape) == 0)
 					gameEnd = true;
 				else
+				{
 					gameEnd = false;
+					Thread.Sleep(TimeSpan.FromSeconds(1));
+				}
 
 				//Reset the game
 				highest = Math.Max(highest, p.score);
